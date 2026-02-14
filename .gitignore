@@ -1,0 +1,8 @@
+notes/
+.cache/
+.vscode/
+logs/
+build/
+scripts/
+
+whot.db

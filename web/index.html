@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whot Card Game</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <div id="welcome" class="screen active">
+            <h1>Whot Card Game</h1>
+            <p class="welcome-sub">Choose how to play:</p>
+            <div class="welcome-options">
+                <button type="button" id="btn-create-account" disabled>Create account (coming soon)</button>
+                <button type="button" id="btn-sign-in" disabled>Sign in (coming soon)</button>
+                <button type="button" id="btn-play-guest">Play as guest</button>
+            </div>
+            <div id="guest-form" class="guest-form" style="display: none;">
+                <label for="guest-username">Your name (optional):</label>
+                <input type="text" id="guest-username" placeholder="Guest" maxlength="30" />
+                <button type="button" id="guest-continue">Continue to lobby</button>
+            </div>
+        </div>
+        <header style="display: none;" id="main-header">
+            <h1>Whot Card Game</h1>
+            <div id="player-info">
+                <span id="player-name">Guest</span>
+                <span id="player-score">Score: 0</span>
+            </div>
+        </header>
+
+        <main style="display: none;" id="main-main">
+            <div id="lobby" class="screen active">
+                <h2>Game Lobby</h2>
+                <div id="join-by-code" class="join-by-code">
+                    <label for="game-code-input">Game code:</label>
+                    <input type="text" id="game-code-input" placeholder="e.g. ABC123" maxlength="12" />
+                    <button type="button" id="join-by-code-btn">Join with code</button>
+                </div>
+                <div id="game-list"></div>
+                <div class="create-game-options">
+                    <label for="bot-count">Bots:</label>
+                    <select id="bot-count">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                    <button id="create-game">Create New Game</button>
+                </div>
+            </div>
+
+            <div id="game-screen" class="screen game-screen-layout">
+                <div id="error-message" class="error-toast" style="display: none;"></div>
+                <div id="game-code-area" class="game-code-area" style="display: none;"></div>
+                <div id="start-game-area" class="start-game-area" style="display: none;">
+                    <button type="button" id="start-game-btn">Start game</button>
+                </div>
+                <div id="game-info">
+                    <div id="current-player"></div>
+                    <div id="turn-timer"></div>
+                </div>
+                <div id="game-table">
+                    <div id="opponent-hands" class="opponent-circles"></div>
+                    <div id="play-area" class="play-area-center">
+                        <div id="deck">
+                            <div class="card-back">Deck</div>
+                            <span id="deck-count">0</span>
+                        </div>
+                        <div id="call-card-area">
+                            <div id="call-card"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="player-hand"></div>
+                <div id="controls">
+                    <button id="draw-card">Draw Card</button>
+                    <button id="declare-last">Last Card</button>
+                </div>
+            </div>
+
+            <div id="game-over" class="screen">
+                <h2>Game Over</h2>
+                <div id="winner-info"></div>
+                <div id="final-scores"></div>
+                <button id="return-lobby">Return to Lobby</button>
+            </div>
+        </main>
+        <script>
+            document.getElementById('btn-play-guest').addEventListener('click', function() {
+                document.getElementById('guest-form').style.display = 'block';
+            });
+            document.getElementById('guest-continue').addEventListener('click', function() {
+                var input = document.getElementById('guest-username');
+                var name = (input && input.value && input.value.trim()) ? input.value.trim() : 'Guest';
+                try { sessionStorage.setItem('whot_playerName', name); } catch (e) {}
+                document.getElementById('welcome').classList.remove('active');
+                document.getElementById('welcome').style.display = 'none';
+                document.getElementById('main-header').style.display = 'flex';
+                document.getElementById('main-main').style.display = 'block';
+                document.getElementById('player-name').textContent = name;
+                if (window.whotClient) {
+                    window.whotClient.onEnterLobby();
+                    window.whotClient.connect();
+                }
+            });
+        </script>
+    </div>
+
+    <div id="suit-picker-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <p>Choose suit for Whot card:</p>
+            <div class="suit-buttons">
+                <button type="button" data-suit="CIRCLE">● Circle</button>
+                <button type="button" data-suit="TRIANGLE">▲ Triangle</button>
+                <button type="button" data-suit="CROSS">✚ Cross</button>
+                <button type="button" data-suit="BLOCK">■ Block</button>
+                <button type="button" data-suit="STAR">★ Star</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- For local dev: HTTP often on 8081, WS on 8080. Set data-ws-port to WS port or leave empty when same port (e.g. behind proxy). -->
+    <script src="js/game.js" data-ws-port="8080" data-api-base=""></script>
+</body>
+</html>
