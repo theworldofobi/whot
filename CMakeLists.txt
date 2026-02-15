@@ -51,6 +51,11 @@ set(ALL_SOURCES
 
 add_library(whot_lib STATIC ${ALL_SOURCES})
 
+# WebSocket++ 0.8.2 uses "template-id in destructor" syntax invalid in C++20. Compile only this TU with C++17.
+set_source_files_properties(src/Network/WebSocketServer.cpp PROPERTIES
+    COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-std=c++17>"
+)
+
 add_executable(whot_server src/main.cpp)
 target_link_libraries(whot_server whot_lib)
 
