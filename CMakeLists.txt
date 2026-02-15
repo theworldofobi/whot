@@ -69,17 +69,43 @@ endif()
 if(WEBSOCKETPP_INCLUDE_DIR STREQUAL "")
     find_path(WEBSOCKETPP_INCLUDE_DIR
         NAMES websocketpp/config/asio_no_tls.hpp
+        PATHS /usr /usr/local
+        PATH_SUFFIXES include
+        NO_DEFAULT_PATH
+    )
+endif()
+if(WEBSOCKETPP_INCLUDE_DIR STREQUAL "")
+    find_path(WEBSOCKETPP_INCLUDE_DIR
+        NAMES websocketpp/config/asio_no_tls.hpp
         PATH_SUFFIXES include
     )
 endif()
 if(WEBSOCKETPP_INCLUDE_DIR STREQUAL "")
     find_path(WEBSOCKETPP_INCLUDE_DIR
         NAMES websocketpp/config.hpp
+        PATHS /usr /usr/local
         PATH_SUFFIXES include
+        NO_DEFAULT_PATH
     )
 endif()
 if(WEBSOCKETPP_INCLUDE_DIR STREQUAL "" AND DEFINED ENV{CONDA_PREFIX})
     set(WEBSOCKETPP_INCLUDE_DIR "$ENV{CONDA_PREFIX}/include")
+endif()
+
+# Fallback: fetch websocketpp via FetchContent (e.g. when libwebsocketpp-dev is missing or layout differs)
+if(NOT WEBSOCKETPP_INCLUDE_DIR)
+    include(FetchContent)
+    FetchContent_Declare(
+        websocketpp
+        GIT_REPOSITORY https://github.com/zaphoyd/websocketpp.git
+        GIT_TAG 0.8.2
+    )
+    FetchContent_GetProperties(websocketpp)
+    if(NOT websocketpp_POPULATED)
+        FetchContent_Populate(websocketpp)
+    endif()
+    set(WEBSOCKETPP_INCLUDE_DIR ${websocketpp_SOURCE_DIR})
+    message(STATUS "Using websocketpp from FetchContent: ${WEBSOCKETPP_INCLUDE_DIR}")
 endif()
 
 if(NOT WEBSOCKETPP_INCLUDE_DIR)
@@ -109,7 +135,7 @@ if(BUILD_TESTS)
     FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG release-1.12.1
+        GIT_TAG release-1.11.0
     )
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)

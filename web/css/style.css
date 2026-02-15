@@ -1,5 +1,11 @@
 /* Basic styling for Whot game */
 
+:root {
+    --color-off-white: #fafaf8;
+    --color-off-black: #1c1c1a;
+    --color-accent: #6b1510;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -7,23 +13,24 @@
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'EB Garamond', Georgia, serif;
+    background: var(--color-off-white);
     min-height: 100vh;
-    color: #333;
+    color: var(--color-off-black);
 }
 
 header {
-    background: white;
+    background: var(--color-off-white);
     padding: 1rem 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
 }
 
 h1 {
-    color: #667eea;
+    color: var(--color-accent);
 }
 
 #player-info {
@@ -39,10 +46,11 @@ main {
 
 .screen {
     display: none;
-    background: white;
+    background: var(--color-off-white);
     border-radius: 10px;
     padding: 2rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.06);
 }
 
 .screen.active {
@@ -54,7 +62,7 @@ main {
     padding: 3rem 2rem;
 }
 #welcome h1 { margin-bottom: 0.5rem; }
-.welcome-sub { margin-bottom: 1.5rem; color: #555; }
+.welcome-sub { margin-bottom: 1.5rem; color: var(--color-off-black); opacity: 0.85; }
 .welcome-options {
     display: flex;
     flex-direction: column;
@@ -86,7 +94,7 @@ main {
     flex: 1;
     min-height: 220px;
     margin: 1rem 0;
-    background: #f8f9fa;
+    background: rgba(0,0,0,0.04);
     border-radius: 10px;
 }
 .opponent-circles {
@@ -108,8 +116,8 @@ main {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--color-accent);
+    color: var(--color-off-white);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -123,13 +131,15 @@ main {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--color-off-black);
 }
 .opponent-circle .opponent-cards {
     font-size: 0.7rem;
-    color: #666;
+    color: var(--color-off-black);
+    opacity: 0.7;
 }
 .opponent-circle.opponent-current-turn .opponent-avatar {
-    box-shadow: 0 0 0 3px #28a745;
+    box-shadow: 0 0 0 3px var(--color-accent);
 }
 .opponent-circles .opponent-circle:nth-child(1) { top: 8px; left: 50%; transform: translateX(-50%); }
 .opponent-circles .opponent-circle:nth-child(2) { top: 50%; left: 8px; transform: translateY(-50%); }
@@ -162,7 +172,7 @@ main {
     flex-wrap: wrap;
     min-height: 140px;
     padding: 1rem;
-    background: #e9ecef;
+    background: rgba(0,0,0,0.04);
     border-radius: 10px;
 }
 
@@ -170,14 +180,30 @@ main {
     width: 80px;
     height: 120px;
     border-radius: 8px;
-    background: white;
-    border: 2px solid #333;
+    background: var(--color-off-white);
+    border: 2px solid var(--color-off-black);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     transition: transform 0.2s;
+    overflow: hidden;
+}
+
+.card .card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.card .card-fallback {
+    display: none;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 0.25rem;
+    color: var(--color-off-black);
 }
 
 .card:hover {
@@ -185,49 +211,63 @@ main {
 }
 
 .card.playable {
-    border-color: #28a745;
-    box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 10px rgba(107, 21, 16, 0.4);
 }
 
-.card-suit {
-    font-size: 2rem;
-}
-
-.card-value {
-    font-size: 1.5rem;
+.card-placeholder {
     font-weight: bold;
+    color: var(--color-off-black);
+    opacity: 0.7;
 }
 
-.card-back {
+#deck {
+    position: relative;
     width: 80px;
     height: 120px;
+}
+
+#deck .deck-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     border-radius: 8px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
+    display: block;
+}
+
+#deck #deck-count {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: var(--color-off-black);
+    color: var(--color-off-white);
+    font-size: 0.85rem;
     font-weight: bold;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    line-height: 1;
 }
 
 button {
-    background: #667eea;
-    color: white;
+    background: var(--color-accent);
+    color: var(--color-off-white);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 5px;
     cursor: pointer;
     font-size: 1rem;
-    transition: background 0.2s;
+    font-family: inherit;
+    transition: background 0.2s, opacity 0.2s;
 }
 
 button:hover {
-    background: #5568d3;
+    background: #8b1c14;
 }
 
 button:disabled {
-    background: #ccc;
+    background: rgba(0,0,0,0.2);
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
 #controls {
@@ -243,7 +283,7 @@ button:disabled {
     align-items: center;
     padding: 0.75rem;
     margin-bottom: 0.5rem;
-    background: #f8f9fa;
+    background: rgba(0,0,0,0.04);
     border-radius: 5px;
 }
 #game-list .game-item-disabled {
@@ -263,8 +303,8 @@ button:disabled {
 
 .error-toast {
     padding: 0.75rem 1rem;
-    background: #dc3545;
-    color: white;
+    background: var(--color-accent);
+    color: var(--color-off-white);
     border-radius: 5px;
     margin-bottom: 1rem;
 }
@@ -273,7 +313,7 @@ button:disabled {
     display: flex;
     justify-content: space-between;
     padding: 1rem;
-    background: #f8f9fa;
+    background: rgba(0,0,0,0.04);
     border-radius: 5px;
     margin-bottom: 1rem;
 }
@@ -281,16 +321,8 @@ button:disabled {
 #turn-timer {
     font-size: 1.5rem;
     font-weight: bold;
-    color: #dc3545;
+    color: var(--color-accent);
 }
-
-/* Suit colors */
-.suit-circle { color: #007bff; }
-.suit-triangle { color: #28a745; }
-.suit-cross { color: #dc3545; }
-.suit-block { color: #ffc107; }
-.suit-star { color: #6f42c1; }
-.suit-whot { color: #fd7e14; }
 
 /* Suit picker modal */
 .modal {
@@ -306,10 +338,11 @@ button:disabled {
     z-index: 1000;
 }
 .modal-content {
-    background: white;
+    background: var(--color-off-white);
     padding: 2rem;
     border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0,0,0,0.08);
 }
 .modal-content p { margin-bottom: 1rem; }
 .suit-buttons {
@@ -336,12 +369,13 @@ button:disabled {
 .game-code-area {
     padding: 1rem;
     margin-bottom: 1rem;
-    background: #e7f1ff;
+    background: rgba(107, 21, 16, 0.08);
     border-radius: 8px;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
+    border: 1px solid rgba(107, 21, 16, 0.15);
 }
 .game-code-label { font-weight: bold; }
 .game-code-value {

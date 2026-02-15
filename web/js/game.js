@@ -97,7 +97,7 @@ class WhotGameClient {
         const apiBase = this.getApiBase();
         const botCountEl = document.getElementById('bot-count');
         const botCount = (botCountEl && parseInt(botCountEl.value, 10)) || 0;
-        fetch(`${apiBase}/api/games`, {
+        this.apiJson(`${apiBase}/api/games`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -107,9 +107,7 @@ class WhotGameClient {
                 botCount: Math.max(0, Math.min(3, botCount))
             })
         })
-        .then(response => response.json())
         .then(data => {
-            if (data.error) throw new Error(data.error);
             this.gameId = data.gameId;
             this.playerId = data.playerId;
             this.gameCode = data.gameCode || null;
@@ -135,14 +133,12 @@ class WhotGameClient {
             return;
         }
         const apiBase = this.getApiBase();
-        fetch(`${apiBase}/api/games/join`, {
+        this.apiJson(`${apiBase}/api/games/join`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ gameCode: code, playerName: this.getPlayerName() })
         })
-        .then(response => response.json())
         .then(data => {
-            if (data.error) throw new Error(data.error);
             this.gameId = data.gameId;
             this.playerId = data.playerId;
             this.sendJoinGameMessage();
@@ -156,12 +152,11 @@ class WhotGameClient {
 
     joinGameFromList(gameId) {
         const apiBase = this.getApiBase();
-        fetch(`${apiBase}/api/games/${gameId}/join`, {
+        this.apiJson(`${apiBase}/api/games/${gameId}/join`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ playerName: this.getPlayerName() })
         })
-        .then(response => response.json())
         .then(data => {
             if (data.error) throw new Error(data.error);
             this.gameId = data.gameId;
@@ -302,7 +297,7 @@ class WhotGameClient {
             callCardElement.appendChild(this.createCardElement(
                 typeof c === 'object' ? c : { suit: 'CIRCLE', value: 1 }));
         } else {
-            callCardElement.innerHTML = '<div class="card card-back">Call</div>';
+            callCardElement.innerHTML = '<div class="card card-placeholder">Call</div>';
         }
     }
     
@@ -323,26 +318,37 @@ class WhotGameClient {
     }
     
     createCardElement(card, interactive = false) {
+        const CARD_IMAGES_BASE = 'assets/images';
         const div = document.createElement('div');
         div.className = 'card';
         if (interactive) {
             // Check if playable and add class
         }
-        
-        const suitSymbols = {
-            'CIRCLE': '●',
-            'TRIANGLE': '▲',
-            'CROSS': '✚',
-            'BLOCK': '■',
-            'STAR': '★',
-            'WHOT': 'W'
+
+        const suit = card.suit || 'CIRCLE';
+        const value = card.value !== undefined && card.value !== null ? card.value : 1;
+        const src = `${CARD_IMAGES_BASE}/${suit}_${value}.svg`;
+        const alt = `${suit} ${value}`;
+
+        const img = document.createElement('img');
+        img.className = 'card-img';
+        img.src = src;
+        img.alt = alt;
+        img.setAttribute('loading', 'lazy');
+
+        const fallback = document.createElement('span');
+        fallback.className = 'card-fallback';
+        fallback.textContent = `${suit} ${value}`;
+        fallback.setAttribute('aria-hidden', 'true');
+
+        img.onerror = () => {
+            img.style.display = 'none';
+            fallback.style.display = 'block';
         };
-        
-        div.innerHTML = `
-            <div class="card-suit suit-${card.suit.toLowerCase()}">${suitSymbols[card.suit]}</div>
-            <div class="card-value">${card.value}</div>
-        `;
-        
+
+        div.appendChild(img);
+        div.appendChild(fallback);
+
         return div;
     }
     
@@ -442,8 +448,7 @@ class WhotGameClient {
     
     loadGameList() {
         const apiBase = this.getApiBase();
-        fetch(`${apiBase}/api/games`)
-            .then(response => response.json())
+        this.apiJson(`${apiBase}/api/games`)
             .then(games => {
                 const listElement = document.getElementById('game-list');
                 if (!listElement) return;
@@ -476,6 +481,20 @@ class WhotGameClient {
         const base = script && script.dataset.apiBase ? script.dataset.apiBase.trim() : null;
         this._apiBase = (base && base.length > 0) ? base.replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin.replace(/\/$/, '') : '');
         return this._apiBase;
+    }
+
+    /** Fetch URL and parse JSON. Rejects with a clear error if response is not OK or not JSON (e.g. HTML 404 page). */
+    async apiJson(url, options = {}) {
+        const res = await fetch(url, options);
+        const ct = (res.headers.get('Content-Type') || '').toLowerCase();
+        if (!ct.includes('application/json')) {
+            const text = await res.text();
+            const preview = (text || '').trim().slice(0, 80);
+            throw new Error(`API returned ${res.status} (expected JSON). Response: ${preview}${text.length > 80 ? '...' : ''}`);
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
+        return data;
     }
 
     getWebSocketUrl() {
