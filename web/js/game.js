@@ -499,7 +499,24 @@ class WhotGameClient {
 
     getWebSocketUrl() {
         if (typeof this._wsUrl !== 'undefined') return this._wsUrl;
-        const script = document.querySelector('script[data-ws-port]');
+        const script = document.querySelector('script[src*="game.js"]') || document.querySelector('script[data-ws-url], script[data-api-base], script[data-ws-port]');
+        const wsUrl = script && script.dataset.wsUrl ? script.dataset.wsUrl.trim() : null;
+        if (wsUrl && wsUrl.length > 0) {
+            this._wsUrl = wsUrl;
+            return this._wsUrl;
+        }
+        const apiBase = script && script.dataset.apiBase ? script.dataset.apiBase.trim() : null;
+        if (apiBase && apiBase.length > 0) {
+            const base = apiBase.replace(/\/$/, '');
+            try {
+                const url = new URL(base);
+                const scheme = url.protocol === 'https:' ? 'wss:' : 'ws:';
+                this._wsUrl = `${scheme}//${url.host}/ws`;
+                return this._wsUrl;
+            } catch (e) {
+                // fall through to port/host logic
+            }
+        }
         const wsPort = script && script.dataset.wsPort ? script.dataset.wsPort.trim() : null;
         const scheme = (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:') ? 'wss:' : 'ws:';
         const host = (typeof window !== 'undefined' && window.location) ? window.location.hostname : 'localhost';

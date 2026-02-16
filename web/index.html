@@ -45,8 +45,6 @@
                 <div class="create-game-options">
                     <label for="bot-count">Bots:</label>
                     <select id="bot-count">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
                     </select>
@@ -124,7 +122,6 @@
         </div>
     </div>
 
-    <!-- For local dev: HTTP often on 8081, WS on 8080. Set data-ws-port to WS port or leave empty when same port (e.g. behind proxy). -->
-    <script src="js/game.js" data-ws-port="8080" data-api-base=""></script>
+    <script src="js/game.js" data-api-base="https://whot-production.up.railway.app" data-ws-url="wss://whot-production.up.railway.app/ws"></script>
 </body>
 </html>
