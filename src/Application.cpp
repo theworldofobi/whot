@@ -14,6 +14,12 @@
 #include <algorithm>
 #include <cctype>
 #include <nlohmann/json.hpp>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+
+// Set by signal handler to request shutdown.
+std::atomic<bool> g_shutdown{false};
 
 namespace whot {
 
@@ -78,9 +84,19 @@ void Application::run()
 {
     if (wsServer_) wsServer_->start();
     if (httpServer_) httpServer_->start();
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    std::mutex shutdownMutex;
+    std::condition_variable shutdownCv;
+    std::unique_lock<std::mutex> lock(shutdownMutex);
+
+    // Wait until the signal handler requests shutdown.
+    // The signal handler is intentionally limited to setting `g_shutdown`,
+    // so we use timed waits (no notify from the signal handler).
+    while (!g_shutdown.load(std::memory_order_acquire)) {
+        shutdownCv.wait_for(lock, std::chrono::milliseconds(250));
     }
+
+    shutdown();
 }
 
 void Application::shutdown()

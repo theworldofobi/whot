@@ -4,18 +4,17 @@
 #include <csignal>
 #include <memory>
 #include <cstdlib>
+#include <atomic>
 
 // Global application pointer for signal handling
 std::unique_ptr<whot::Application> g_app;
 
+// Set by signal handler to request shutdown (defined in Application.cpp).
+extern std::atomic<bool> g_shutdown;
+
 void signalHandler(int signal) {
-    if (signal == SIGINT || signal == SIGTERM) {
-        std::cout << "\nShutting down server..." << std::endl;
-        if (g_app) {
-            g_app->shutdown();
-        }
-        exit(0);
-    }
+    (void)signal;
+    g_shutdown.store(true, std::memory_order_relaxed);
 }
 
 int main(int argc, char** argv) {
