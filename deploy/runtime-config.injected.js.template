@@ -1,0 +1,7 @@
+/**
+ * Injected at container start: API_BASE and WS_URL (or derived from PUBLIC_URL).
+ * Written to web/js/runtime-config.js so the same web assets work for local, GitHub Pages, and Railway.
+ */
+(function() {
+  window.WHOT_CONFIG = { apiBase: '${API_BASE}', wsUrl: '${WS_URL}' };
+})();

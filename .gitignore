@@ -1,0 +1,8 @@
+notes/
+.cache/
+.vscode/
+logs/
+build/
+.DS_Store
+
+whot.db
