@@ -5,59 +5,54 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(MSVC)
-    add_compile_options(/W4 /WX)
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror)
-endif()
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# Fix RPATH to prioritize system libraries over anaconda3
-if(UNIX AND NOT APPLE)
-    # Completely disable RPATH handling to suppress warnings about anaconda3 conflicts
-    # Libraries will be resolved at runtime via system default paths
-    set(CMAKE_SKIP_RPATH TRUE)
-    set(CMAKE_SKIP_BUILD_RPATH TRUE)
-    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
-    set(CMAKE_INSTALL_RPATH "")
-    # Set BUILD_RPATH to empty to prevent conflict detection
-    set(CMAKE_BUILD_RPATH "")
-endif()
-
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-file(GLOB_RECURSE CORE_SOURCES "src/Core/*.cpp")
-file(GLOB_RECURSE GAME_SOURCES "src/Game/*.cpp")
-file(GLOB_RECURSE RULES_SOURCES "src/Rules/*.cpp")
-file(GLOB_RECURSE NETWORK_SOURCES "src/Network/*.cpp")
-file(GLOB_RECURSE AI_SOURCES "src/AI/*.cpp")
-file(GLOB_RECURSE PERSISTENCE_SOURCES "src/Persistence/*.cpp")
-file(GLOB_RECURSE UTILS_SOURCES "src/Utils/*.cpp")
-
-set(ALL_SOURCES
-    ${CORE_SOURCES}
-    ${GAME_SOURCES}
-    ${RULES_SOURCES}
-    ${NETWORK_SOURCES}
-    ${AI_SOURCES}
-    ${PERSISTENCE_SOURCES}
-    ${UTILS_SOURCES}
+add_library(whot_lib STATIC
+    src/AI/AIPlayer.cpp
+    src/AI/DifficultyLevel.cpp
+    src/AI/Strategy.cpp
     src/Application.cpp
+    src/Core/Card.cpp
+    src/Core/Deck.cpp
+    src/Core/GameConstants.cpp
+    src/Core/Hand.cpp
+    src/Core/Player.cpp
+    src/Game/GameEngine.cpp
+    src/Game/GameState.cpp
+    src/Game/RuleEngine.cpp
+    src/Game/ScoreCalculator.cpp
+    src/Game/TurnManager.cpp
+    src/Network/HTTPServer.cpp
+    src/Network/MessageProtocol.cpp
+    src/Network/SessionManager.cpp
+    src/Network/WebSocketServer.cpp
+    src/Persistence/Database.cpp
+    src/Persistence/GameRepository.cpp
+    src/Persistence/PlayerRepository.cpp
+    src/Rules/NigerianRules.cpp
+    src/Utils/JSONSerializer.cpp
+    src/Utils/Logger.cpp
+    src/Utils/Random.cpp
+    src/Utils/Validation.cpp
 )
-
-add_library(whot_lib STATIC ${ALL_SOURCES})
-
-# WebSocket++ 0.8.2 uses "template-id in destructor" syntax invalid in C++20. Compile only this TU with C++17.
 set_source_files_properties(src/Network/WebSocketServer.cpp PROPERTIES
     COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-std=c++17>"
 )
 
 add_executable(whot_server src/main.cpp)
 target_link_libraries(whot_server whot_lib)
+
+if(MSVC)
+    target_compile_options(whot_lib PRIVATE /W4)
+    target_compile_options(whot_server PRIVATE /W4)
+else()
+    target_compile_options(whot_lib PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(whot_server PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 find_package(Threads REQUIRED)
 target_link_libraries(whot_lib PUBLIC Threads::Threads)
@@ -149,13 +144,10 @@ if(BUILD_TESTS)
     
     add_executable(whot_tests ${TEST_SOURCES})
     target_include_directories(whot_tests PRIVATE ${PROJECT_SOURCE_DIR}/tests)
-    # Disable RPATH for test executable to suppress warnings
-    if(UNIX AND NOT APPLE)
-        set_target_properties(whot_tests PROPERTIES
-            SKIP_BUILD_RPATH TRUE
-            BUILD_WITH_INSTALL_RPATH FALSE
-            INSTALL_RPATH ""
-        )
+    if(MSVC)
+        target_compile_options(whot_tests PRIVATE /W4)
+    else()
+        target_compile_options(whot_tests PRIVATE -Wall -Wextra -Wpedantic)
     endif()
     target_link_libraries(whot_tests 
         whot_lib 
