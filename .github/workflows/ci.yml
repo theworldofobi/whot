@@ -2,9 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   build-and-test:
@@ -39,3 +37,31 @@ jobs:
         run: |
           cd build
           ctest --output-on-failure
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t whot-local .
+
+      - name: Run container and verify health
+        run: |
+          set -e
+          docker run -d --name whot-ci -e PORT=8080 -p 8080:8080 whot-local
+          for i in $(seq 1 60); do
+            if curl -fsS --max-time 2 http://127.0.0.1:8080/api/health >/dev/null 2>&1; then
+              echo "Health check OK (attempt $i)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Health check failed after retries"
+          docker logs whot-ci || true
+          exit 1
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f whot-ci 2>/dev/null || true
