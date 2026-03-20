@@ -568,23 +568,54 @@ std::string Application::getGameCode(const std::string& gameId) const
 
 void Application::broadcastGameState(const std::string& gameId)
 {
+    if (!wsServer_ || !wsServer_->getSessionManager()) return;
     touchGameActivity(gameId);
-    game::GameEngine* engine = getGame(gameId);
-    if (!engine || !wsServer_ || !wsServer_->getSessionManager()) return;
-    const game::GameState* state = engine->getState();
-    auto sessionIds = wsServer_->getSessionManager()->getSessionsForGame(gameId);
+
+    // Phase 0: Collect sessions and stable per-session metadata (no gamesMutex_ held).
+    network::WebSocketServer* server = wsServer_.get();
+    auto* sessionMgr = wsServer_->getSessionManager();
+    const auto sessionIds = sessionMgr->getSessionsForGame(gameId);
+
+    std::vector<std::string> sessionPlayerIds;
+    sessionPlayerIds.reserve(sessionIds.size());
     for (const std::string& sessionId : sessionIds) {
-        std::string playerId;
-        const auto* sess = wsServer_->getSessionManager()->getSession(sessionId);
-        if (sess) playerId = sess->playerId;
-        std::string stateJson = state->toJsonForPlayer(playerId);
+        const auto* sess = sessionMgr->getSession(sessionId);
+        sessionPlayerIds.push_back(sess ? sess->playerId : std::string{});
+    }
+
+    struct PendingSend {
+        std::string sessionId;
         network::Message msg;
-        msg.type = network::MessageType::GAME_STATE_UPDATE;
-        msg.gameId = gameId;
-        msg.payload = "{\"gameStateJson\":" + stateJson + "}";
-        msg.timestamp = static_cast<uint64_t>(
+    };
+    std::vector<PendingSend> pending;
+    pending.reserve(sessionIds.size());
+
+    // Phase 1: Serialize under gamesMutex_ and build pending websocket messages.
+    // This prevents deadlocks from holding gamesMutex_ while calling wsServer_->sendMessage().
+    {
+        std::lock_guard<std::mutex> lock(gamesMutex_);
+        auto it = activeGames_.find(gameId);
+        if (it == activeGames_.end()) return;
+        if (!it->second || !it->second->getState()) return;
+
+        const game::GameState* state = it->second->getState();
+        const uint64_t ts = static_cast<uint64_t>(
             std::chrono::system_clock::now().time_since_epoch().count());
-        wsServer_->sendMessage(sessionId, msg);
+
+        for (size_t i = 0; i < sessionIds.size(); ++i) {
+            std::string stateJson = state->toJsonForPlayer(sessionPlayerIds[i]);
+            network::Message msg;
+            msg.type = network::MessageType::GAME_STATE_UPDATE;
+            msg.gameId = gameId;
+            msg.payload = "{\"gameStateJson\":" + stateJson + "}";
+            msg.timestamp = ts;
+            pending.push_back(PendingSend{sessionIds[i], std::move(msg)});
+        }
+    }
+
+    // Phase 2: Send after unlock.
+    for (const auto& item : pending) {
+        server->sendMessage(item.sessionId, item.msg);
     }
 }
 

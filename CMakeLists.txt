@@ -123,6 +123,12 @@ target_link_libraries(whot_lib PUBLIC Boost::system)
 find_package(nlohmann_json REQUIRED)
 target_link_libraries(whot_lib PUBLIC nlohmann_json::nlohmann_json)
 
+# Prefer the active conda prefix for SQLite so CMake doesn't mix system
+# and conda runtime libraries during RPATH generation.
+if(DEFINED ENV{CONDA_PREFIX})
+    list(PREPEND CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
+endif()
+
 find_package(SQLite3 REQUIRED)
 target_link_libraries(whot_lib PUBLIC SQLite::SQLite3)
 
